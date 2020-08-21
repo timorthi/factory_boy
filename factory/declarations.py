@@ -708,7 +708,7 @@ class RelatedFactoryList(RelatedFactory):
         defaults (dict): extra declarations for calling the related factory
         factory_related_name (str): the name to use to refer to the generated
             object when calling the related factory
-        size (int|lambda): the number of times 'factory' is called, ultimately
+        size (int|lambda|LazyAttribute|SelfAttribute): the number of times 'factory' is called, ultimately
             returning a list of 'factory' objects w/ size 'size'.
     """
 
@@ -717,6 +717,9 @@ class RelatedFactoryList(RelatedFactory):
         super().__init__(factory, factory_related_name, **defaults)
 
     def call(self, instance, step, context):
+        if isinstance(self.size, LazyAttribute) or isinstance(self.size, SelfAttribute):
+            self.size = self.size.evaluate(instance=instance, step=step, extra=context.extra)
+
         return [super(RelatedFactoryList, self).call(instance, step, context)
                 for i in range(self.size if isinstance(self.size, int)
                                else self.size())]
